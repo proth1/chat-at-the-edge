@@ -18,7 +18,7 @@ app.get("/", (c) => {
       <div className="flex h-screen bg-gray-200">
         <div
           className="flex-grow flex flex-col"
-          style="max-width: calc(100% - 20rem)"
+          style={{ maxWidth: "calc(100% - 20rem)" }}
         >
           <div
             id="chat-history"
@@ -42,11 +42,12 @@ app.get("/", (c) => {
               <p className="model-display">-</p>
               <input
                 type="hidden"
-                class="message-user message-assistant message-model"
+                className="message-user message-assistant message-model"
               />
             </div>
           </div>
         </div>
+
         <div className="w-80 bg-chat-settings p-6 shadow-xl flex flex-col justify-between">
           <div>
             <div className="mb-4">
@@ -56,6 +57,7 @@ app.get("/", (c) => {
                 application
               </p>
             </div>
+
             <form>
               <div className="mb-4">
                 <label className="block text-black text-sm font-bold mb-2">
@@ -66,6 +68,7 @@ app.get("/", (c) => {
                   className="border border-chat-border rounded w-full py-2 px-3 text-black leading-tight focus:outline-none focus:shadow-outline"
                 ></select>
               </div>
+
               <div className="mb-4">
                 <label className="block text-black text-sm font-bold mb-2">
                   System Message
@@ -79,6 +82,7 @@ app.get("/", (c) => {
                   placeholder="Enter system message..."
                 ></textarea>
               </div>
+
               <button
                 id="apply-chat-settings"
                 className="w-full px-4 py-2 bg-chat-apply text-white rounded hover:bg-gray-800 focus:outline-none focus:shadow-outline"
@@ -87,21 +91,25 @@ app.get("/", (c) => {
               </button>
             </form>
           </div>
-          <div className="mt-4 text-center text-sm text-gray-500 flex items-center justify-center">
-            <span className="mr-2 pt-2">Powered by</span>
+
+          <div className="mt-4 text-center text-sm text-gray-500 flex flex-col items-center justify-center">
+            <span className="text-black font-semibold mb-2">Powered by</span>
             <a
-              href="https://developers.cloudflare.com/workers-ai/"
+              href="https://northhighland.com"
               target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80"
             >
               <img
-                src="/static/cloudflare-logo.png"
-                alt="Cloudflare Logo"
-                className="h-6 inline"
+                src="/static/NH_Logo _Primary_Horizontal_Large.png"
+                alt="North Highland Logo"
+                className="h-12"
               />
             </a>
           </div>
         </div>
       </div>
+
       <script src="/static/script.js"></script>
     </>
   );
@@ -110,17 +118,20 @@ app.get("/", (c) => {
 app.post("/api/chat", async (c) => {
   const payload = await c.req.json();
   const messages = [...payload.messages];
-  // Prepend the systemMessage
+
   if (payload?.config?.systemMessage) {
-    messages.unshift({ role: "system", content: payload.config.systemMessage });
+    messages.unshift({
+      role: "system",
+      content: payload.config.systemMessage,
+    });
   }
-  //console.log("Model", payload.config.model);
-  //console.log("Messages", JSON.stringify(messages));
+
   let eventSourceStream;
   let retryCount = 0;
   let successfulInference = false;
   let lastError;
   const MAX_RETRIES = 3;
+
   while (successfulInference === false && retryCount < MAX_RETRIES) {
     try {
       eventSourceStream = (await c.env.AI.run(payload.config.model, {
@@ -135,13 +146,14 @@ app.post("/api/chat", async (c) => {
       console.log(`Retrying #${retryCount}...`);
     }
   }
+
   if (eventSourceStream === undefined) {
     if (lastError) {
       throw lastError;
     }
-    throw new Error(`Problem with model`);
+    throw new Error("Problem with model");
   }
-  // EventSource stream is handy for local event sources, but we want to just stream text
+
   const tokenStream = eventSourceStream
     .pipeThrough(new TextDecoderStream())
     .pipeThrough(new EventSourceParserStream());
